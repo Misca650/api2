@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact Sheet — ครอบรูปเป็น 500×500 PNG</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --darkroom: #17181c;
+    --darkroom-2: #202228;
+    --safelight: #c1443c;
+    --safelight-bright: #e2665e;
+    --paper: #ece7dd;
+    --paper-dim: #a9a49a;
+    --line: #35373e;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--darkroom);
+    color: var(--paper);
+    font-family: 'Space Grotesk', sans-serif;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 56px 24px 80px;
+  }
+
+  header {
+    margin-bottom: 40px;
+  }
+
+  .slate {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--paper-dim);
+    border: 1px solid var(--line);
+    padding: 4px 10px;
+    border-radius: 3px;
+    margin-bottom: 18px;
+  }
+
+  h1 {
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 1.15;
+    margin: 0 0 14px;
+    max-width: 14ch;
+  }
+
+  h1 span {
+    color: var(--safelight-bright);
+  }
+
+  header p {
+    color: var(--paper-dim);
+    font-size: 16px;
+    line-height: 1.6;
+    max-width: 52ch;
+    margin: 0;
+  }
+
+  .filmstrip {
+    position: relative;
+    background: var(--darkroom-2);
+    border: 2px dashed var(--line);
+    border-radius: 4px;
+    padding: 18px 34px;
+    transition: border-color .15s ease, background .15s ease;
+    cursor: pointer;
+  }
+
+  .filmstrip.dragover {
+    border-color: var(--safelight);
+    background: #262027;
+  }
+
+  .filmstrip .sprockets {
+    position: absolute;
+    top: 0; bottom: 0;
+    width: 34px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+  }
+  .filmstrip .sprockets.left { left: 0; }
+  .filmstrip .sprockets.right { right: 0; }
+  .filmstrip .sprockets span {
+    width: 10px;
+    height: 14px;
+    margin: 0 auto;
+    background: var(--darkroom);
+    border-radius: 2px;
+  }
+
+  .drop-inner {
+    text-align: center;
+    padding: 46px 10px;
+  }
+
+  .drop-inner .big {
+    font-size: 19px;
+    font-weight: 500;
+    margin-bottom: 8px;
+  }
+
+  .drop-inner .small {
+    color: var(--paper-dim);
+    font-size: 14px;
+  }
+
+  .drop-inner .small button {
+    background: none;
+    border: none;
+    color: var(--safelight-bright);
+    font: inherit;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  input[type=file] { display: none; }
+
+  .roll {
+    margin-top: 34px;
+  }
+
+  .roll-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--paper-dim);
+  }
+
+  .frames {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 10px;
+  }
+
+  .frame {
+    position: relative;
+    background: var(--darkroom-2);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    overflow: hidden;
+    aspect-ratio: 1 / 1;
+  }
+
+  .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .frame .tag {
+    position: absolute;
+    left: 0; bottom: 0;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    background: rgba(0,0,0,.55);
+    color: var(--paper);
+    padding: 2px 5px;
+  }
+
+  .frame .remove {
+    position: absolute;
+    top: 4px; right: 4px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(0,0,0,.55);
+    color: var(--paper);
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    line-height: 1;
+  }
+  .frame .remove:hover { background: var(--safelight); }
+
+  .actions {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  button.develop {
+    background: var(--safelight);
+    color: var(--paper);
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-weight: 500;
+    font-size: 15px;
+    padding: 14px 26px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background .15s ease;
+  }
+  button.develop:hover:not(:disabled) { background: var(--safelight-bright); }
+  button.develop:disabled {
+    background: var(--line);
+    color: var(--paper-dim);
+    cursor: not-allowed;
+  }
+
+  .status {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    color: var(--paper-dim);
+  }
+
+  .status.error { color: var(--safelight-bright); }
+  .status.success { color: #8fbf8f; }
+
+  button.develop.ghost {
+    background: transparent;
+    border: 1px solid var(--safelight);
+    color: var(--safelight-bright);
+  }
+  button.develop.ghost:hover:not(:disabled) {
+    background: rgba(193, 68, 60, .12);
+  }
+  button.develop.ghost:disabled {
+    border-color: var(--line);
+    color: var(--paper-dim);
+  }
+
+  .link-list {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .link-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--darkroom);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 8px 10px;
+  }
+
+  .link-row .tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--paper-dim);
+    flex-shrink: 0;
+    width: 34px;
+  }
+
+  .link-row input {
+    flex: 1;
+    background: none;
+    border: none;
+    color: var(--paper);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    min-width: 0;
+  }
+  .link-row input:focus { outline: none; }
+
+  .link-row .copy {
+    background: var(--line);
+    color: var(--paper);
+    border: none;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 12px;
+    padding: 6px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .link-row .copy:hover { background: var(--safelight); }
+
+  .link-row.errored {
+    border-color: var(--safelight);
+  }
+  .link-row.errored .tag { color: var(--safelight-bright); }
+
+  .copy-all {
+    margin-top: 4px;
+    align-self: flex-start;
+    background: none;
+    border: none;
+    color: var(--safelight-bright);
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 13px;
+    text-decoration: underline;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  footer {
+    margin-top: 60px;
+    font-size: 13px;
+    color: var(--paper-dim);
+    border-top: 1px solid var(--line);
+    padding-top: 18px;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="slate">CAM · 500×500 · PNG</div>
+      <h1>ล้างฟิล์มเป็นรูป<span>สี่เหลี่ยมจัตุรัส</span></h1>
+      <p>ลากรูปมาวางกี่รูปก็ได้ ไม่จำกัดจำนวน ระบบจะครอบตัดกึ่งกลางให้เหลือขนาด 500×500 พิกเซล แล้วแปลงเป็น PNG ให้ทั้งหมด จากนั้นส่งขึ้นเซิร์ฟเวอร์และคืนลิงก์กลับมาให้</p>
+    </header>
+
+    <div class="filmstrip" id="dropzone">
+      <div class="sprockets left">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="sprockets right">
+        <span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <div class="drop-inner">
+        <div class="big">ลากรูปมาวางตรงนี้</div>
+        <div class="small">หรือ <button type="button" id="browseBtn">เลือกไฟล์จากเครื่อง</button></div>
+      </div>
+      <input type="file" id="fileInput" multiple accept="image/*" />
+    </div>
+
+    <div class="roll" id="roll" style="display:none;">
+      <div class="roll-head">
+        <span id="frameCount">0 เฟรม</span>
+        <span>ครอบตัด 500×500 · cover</span>
+      </div>
+      <div class="frames" id="frames"></div>
+
+      <div class="actions">
+        <button class="develop" id="developBtn">อัปโหลด</button>
+        <span class="status" id="status"></span>
+      </div>
+
+      <div class="link-list" id="linkList"></div>
+    </div>
+
+    <footer>
+      รันด้วย Node.js + Express + sharp — ไฟล์ต้นฉบับไม่ถูกอัปโหลดไปที่ไหนนอกจากเซิร์ฟเวอร์ของคุณเอง
+    </footer>
+  </div>
+
+<script src="app.js"></script>
+</body>
+</html>
