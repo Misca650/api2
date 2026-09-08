@@ -18,9 +18,19 @@ const GITHUB_PATH_PREFIX = (process.env.GITHUB_PATH_PREFIX || 'uploads').replace
 const GITHUB_API_BASE = 'https://api.github.com';
 
 function assertGithubConfigured() {
-  if (!GITHUB_TOKEN || !GITHUB_OWNER || !GITHUB_REPO) {
+  if (!GITHUB_TOKEN) {
     throw new Error(
-      '[Server]: ยังไม่ได้ตั้งค่า GITHUB_TOKEN / GITHUB_OWNER / GITHUB_REPO (environment variables)'
+      '[Server]: ยังไม่ได้ตั้งค่า GITHUB_TOKEN (environment variables)'
+    );
+  }
+  if (!GITHUB_OWNER) {
+    throw new Error(
+      '[Server]: ยังไม่ได้ตั้งค่า GITHUB_OWNER (environment variables)'
+    );
+  }
+  if (!GITHUB_REPO) {
+    throw new Error(
+      '[Server]: ยังไม่ได้ตั้งค่า GITHUB_REPO (environment variables)'
     );
   }
 }
