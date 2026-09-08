@@ -84,7 +84,7 @@ developBtn.addEventListener('click', async () => {
   files.forEach(f => formData.append('images', f.file, f.file.name));
 
   try {
-    const res = await fetch('/convert-and-upload', { method: 'POST', body: formData });
+    const res = await fetch('/convert-and-webhook', { method: 'POST', body: formData });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'ส่งไม่สำเร็จ');
 
