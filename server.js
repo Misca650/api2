@@ -2,13 +2,7 @@
 // env vars มาจาก dashboard/`vercel env pull` อยู่แล้ว และไฟล์ .env.local ก็ไม่ได้ถูก
 // deploy ขึ้นไปด้วย ถ้า require('dotenv') ตรง ๆ แล้ว package ไม่ได้ถูกติดตั้งบนเซิร์ฟเวอร์
 // (เช่นอยู่ผิดที่ใน package.json) ฟังก์ชันจะ crash ทันทีตั้งแต่บรรทัดแรกแบบที่เห็นใน log
-if (!process.env.VERCEL) {
-  try {
-    require('dotenv').config({ path: '.env.local' });
-  } catch (e) {
-    console.warn('[คำเตือน] โหลด dotenv ไม่สำเร็จ (ข้ามได้ถ้ารันบน production):', e.message);
-  }
-}
+require('dotenv').config();
 
 const express = require('express');
 const multer = require('multer');
