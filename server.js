@@ -485,6 +485,7 @@ app.post('/convert-and-link', (req, res) => {
           access: 'public',
           contentType: 'image/png',
           addRandomSuffix: false, // เราสุ่ม token ในชื่อไฟล์เองแล้ว
+          token: process.env.BLOB_READ_WRITE_TOKEN
         });
 
         results.push({
