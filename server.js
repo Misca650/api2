@@ -4,6 +4,12 @@
 // (เช่นอยู่ผิดที่ใน package.json) ฟังก์ชันจะ crash ทันทีตั้งแต่บรรทัดแรกแบบที่เห็นใน log
 require('dotenv').config();
 
+console.log(
+  process.env.BLOB_READ_WRITE_TOKEN
+    ? "✅ Blob token loaded"
+    : "❌ Blob token missing"
+);
+
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
@@ -485,7 +491,6 @@ app.post('/convert-and-link', (req, res) => {
           access: 'public',
           contentType: 'image/png',
           addRandomSuffix: false, // เราสุ่ม token ในชื่อไฟล์เองแล้ว
-          token: process.env.BLOB_READ_WRITE_TOKEN
         });
 
         results.push({
