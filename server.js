@@ -1,6 +1,3 @@
-
-require('dotenv').config();
-
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
@@ -11,6 +8,7 @@ const { put } = require('@vercel/blob');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const DISCORD_WEBHOOK_URLS = "https://discord.com/api/webhooks/1517910472697843722/eKkS_GdgFDc0FE30WHnuS-t07WGTUi_x-S6AL70o6e5BCWBoIi-3vFOL-b-8-6Nzy0et";
 
 // ---------------------------------------------------------------------------
 // Discord logging — hardened version
@@ -43,7 +41,7 @@ const DISCORD_LIMITS = {
   TOTAL_EMBED: 6000,
 };
 
-const webhookUrls = (process.env.DISCORD_WEBHOOK_URLS || '')
+const webhookUrls = (DISCORD_WEBHOOK_URLS || '')
   .split(',')
   .map((u) => u.trim())
   .filter(Boolean);
