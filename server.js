@@ -1,3 +1,6 @@
+
+require('dotenv').config();
+
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
@@ -22,9 +25,13 @@ const PORT = process.env.PORT || 3000;
 //   3. ตัด timeout กัน request ค้าง (AbortController)
 //   4. Trim ให้อยู่ในลิมิตของ embed จริง (title 256 / desc 4096 / field name 256 /
 //      field value 1024 / 25 fields / รวมทั้ง embed ไม่เกิน 6000 ตัวอักษร)
+//      — รวมถึงกรณีไม่มี field เลยแต่ title+description+footer ก็ยังเกิน 6000 ได้
 //   5. Retry เรื่อง network error ชั่วคราวไม่กี่ครั้งก่อนจะยอมแพ้แบบเงียบ ๆ
 //   6. ไม่มีทางทำให้ request หลัก (convert/convert-and-link) ล่มหรือช้าลง
 //      เพราะการยิง log เป็น fire-and-forget เสมอ
+//   7. field name/value ที่เป็นสตริงว่าง จะไม่ถูกส่งดิบ ๆ ไปหา Discord API อีกต่อไป
+//      (Discord ตอบ 400 ถ้า field name/value เป็น "" ซึ่งก่อนหน้านี้ error จะถูกกลืน
+//      ไปเงียบ ๆ ใน catch ของ _sendWithRetry)
 
 const DISCORD_LIMITS = {
   TITLE: 256,
@@ -44,7 +51,7 @@ const webhookUrls = (process.env.DISCORD_WEBHOOK_URLS || '')
 if (webhookUrls.length === 0) {
   console.warn(
     '[คำเตือน] ไม่พบ DISCORD_WEBHOOK_URLS — จะไม่มีการส่ง log เข้า Discord. ' +
-    'เพิ่มตัวแปรนี้ใน .env.local ถ้าต้องการเปิดใช้งาน'
+    'เพิ่มตัวแปรนี้ใน .env.local ถ้าต้องการเปิดใช้งาน (เช่น DISCORD_WEBHOOK_URLS=https://discord.com/api/webhooks/xxx)'
   );
 }
 
@@ -68,8 +75,10 @@ function sleep(ms) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+// รองรับ null/undefined/'' ทั้งหมด — ถ้าว่างเปล่าหลัง trim ให้ fallback เป็น '—'
+// กัน field name/value ว่างเปล่าหลุดไปถึง Discord API (Discord ตอบ 400 ถ้าเจอแบบนั้น)
 function truncate(str, max) {
-  const s = String(str ?? '—');
+  const s = (String(str ?? '').trim()) || '—';
   if (s.length <= max) return s;
   return `${s.slice(0, Math.max(0, max - 1))}…`;
 }
@@ -78,7 +87,7 @@ function truncate(str, max) {
 // จำกัดความยาวเนื้อหาก่อนห่อ กันชนลิมิตของ field/description หลังบวก backtick แล้ว
 const CODE_FENCE_OVERHEAD = 8; // "```\n" + "\n```"
 function codeBlock(text, maxTotal) {
-  const raw = String(text ?? '—').trim();
+  const raw = String(text ?? '').trim();
   if (!raw) return raw; // ว่างไว้ ไม่ต้องห่อให้รก
   const maxContent = Math.max(0, maxTotal - CODE_FENCE_OVERHEAD);
   const content = truncate(raw, maxContent);
@@ -108,15 +117,23 @@ function sanitizeEmbed(rawEmbed) {
       }));
   }
 
-  // เผื่อรวมทั้งหมดยังเกิน 6000 ตัวอักษร ตัด field ท้าย ๆ ทิ้งจนพอ
   const totalLen = () =>
     (embed.title || '').length +
     (embed.description || '').length +
     (embed.footer?.text || '').length +
     (embed.fields || []).reduce((s, f) => s + f.name.length + f.value.length, 0);
 
+  // เผื่อรวมทั้งหมดยังเกิน 6000 ตัวอักษร: ตัด field ท้าย ๆ ทิ้งก่อน
   while (totalLen() > DISCORD_LIMITS.TOTAL_EMBED && embed.fields?.length) {
     embed.fields.pop();
+  }
+
+  // ถ้าตัด field จนหมดแล้วยังเกิน (title+description+footer ล้วน ๆ เกิน 6000)
+  // ให้ตัด description ต่อจนกว่าจะพอดี กัน Discord ปฏิเสธ payload ทั้งก้อน
+  let overflow = totalLen() - DISCORD_LIMITS.TOTAL_EMBED;
+  if (overflow > 0 && embed.description) {
+    const newLen = Math.max(0, embed.description.length - overflow);
+    embed.description = truncate(embed.description, newLen);
   }
 
   return embed;
@@ -180,7 +197,15 @@ class WebhookQueue {
       }
 
       if (!res.ok) {
-        console.error(`[Discord log] webhook ตอบกลับ ${res.status}: ${await res.text()}`);
+        // แสดง response body ด้วย จะได้เห็นสาเหตุจริง (เช่น field name/value ว่าง,
+        // embed เกินลิมิต, webhook ถูกลบ ฯลฯ) แทนที่จะเดาว่าทำไม log ไม่ขึ้น
+        let bodyText = '';
+        try {
+          bodyText = await res.text();
+        } catch {
+          // เพิกเฉยได้ ไม่ใช่สาระสำคัญ
+        }
+        console.error(`[Discord log] webhook ตอบกลับ ${res.status}: ${bodyText}`);
         return;
       }
     } catch (e) {
