@@ -1,15 +1,3 @@
-// โหลด .env.local เฉพาะตอนรันบนเครื่อง dev เท่านั้น — บน Vercel (production/preview)
-// env vars มาจาก dashboard/`vercel env pull` อยู่แล้ว และไฟล์ .env.local ก็ไม่ได้ถูก
-// deploy ขึ้นไปด้วย ถ้า require('dotenv') ตรง ๆ แล้ว package ไม่ได้ถูกติดตั้งบนเซิร์ฟเวอร์
-// (เช่นอยู่ผิดที่ใน package.json) ฟังก์ชันจะ crash ทันทีตั้งแต่บรรทัดแรกแบบที่เห็นใน log
-require('dotenv').config();
-
-console.log(
-  process.env.BLOB_READ_WRITE_TOKEN
-    ? "✅ Blob token loaded"
-    : "❌ Blob token missing"
-);
-
 const express = require('express');
 const multer = require('multer');
 const sharp = require('sharp');
@@ -306,14 +294,6 @@ function formatFileList(names, max = 1000) {
   return truncate(joined, max);
 }
 
-// เช็คตั้งแต่ตอนสตาร์ทเซิร์ฟเวอร์ว่ามี token ของ Vercel Blob หรือยัง
-if (!process.env.BLOB_READ_WRITE_TOKEN) {
-  console.warn(
-    '[คำเตือน] ไม่พบ BLOB_READ_WRITE_TOKEN — /convert-and-link จะอัปโหลดไม่สำเร็จ. ' +
-    'รัน `vercel env pull .env.local` แล้วเช็คว่าไฟล์ .env.local อยู่โฟลเดอร์เดียวกับ server.js'
-  );
-}
-
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -454,17 +434,6 @@ app.post('/convert-and-link', (req, res) => {
     const files = req.files;
     if (!files || files.length === 0) {
       return res.status(400).json({ error: '[Server]: ไม่มีไฟล์ถูกส่งมา' });
-    }
-
-    if (!process.env.BLOB_READ_WRITE_TOKEN) {
-      logToDiscord({
-        title: '❌ /convert-and-link ไม่มี BLOB_READ_WRITE_TOKEN',
-        description: 'เซิร์ฟเวอร์ยังไม่ได้ตั้งค่า token สำหรับ Vercel Blob',
-        color: 0xed4245,
-      });
-      return res.status(500).json({
-        error: 'ยังไม่ได้ตั้งค่า BLOB_READ_WRITE_TOKEN บนเซิร์ฟเวอร์ (ดู log ตอนสตาร์ท)',
-      });
     }
 
     const usedNames = new Set();
